@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GIS KML Processor</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="40" height="40" rx="10" fill="#2563EB"/>
+                    <path d="M20 10L28 16V24L20 30L12 24V16L20 10Z" stroke="white" stroke-width="2" fill="none"/>
+                    <circle cx="20" cy="20" r="3" fill="white"/>
+                </svg>
+                <h1>GIS KML Processor</h1>
+            </div>
+            <p class="subtitle">Transform your KML files with ease</p>
+        </header>
+
+        <main class="main">
+            <div class="card">
+                <div class="input-section">
+                    <div class="input-group">
+                        <label for="prefixInput">Naming Prefix</label>
+                        <div class="prefix-wrapper">
+                            <input 
+                                type="text" 
+                                id="prefixInput" 
+                                placeholder="XX" 
+                                maxlength="2"
+                                value="X"
+                            >
+                            <span class="prefix-hint">1-2 letter prefix for polygon names (e.g., X, AB)</span>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="fileInput">Upload KML File</label>
+                        <div class="file-upload" id="dropZone">
+                            <input type="file" id="fileInput" accept=".kml" hidden>
+                            <div class="file-upload-content">
+                                <svg class="upload-icon" width="48" height="48" viewBox="0 0 48 48" fill="none">
+                                    <path d="M24 32V16M24 16L18 22M24 16L30 22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M24 40C32.8366 40 40 32.8366 40 24C40 15.1634 32.8366 8 24 8C15.1634 8 8 15.1634 8 24C8 32.8366 15.1634 40 24 40Z" stroke="currentColor" stroke-width="2"/>
+                                </svg>
+                                <p class="upload-text">Click to upload or drag and drop</p>
+                                <p class="upload-hint">KML files only</p>
+                                <p class="file-name" id="fileName"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button id="processBtn" class="btn btn-primary" disabled>
+                        <span class="btn-text">Process KML</span>
+                        <svg class="btn-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M4 10H16M16 10L11 5M16 10L11 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="progress-section" id="progressSection" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p class="progress-text" id="progressText">Processing...</p>
+                </div>
+
+                <div class="results" id="results" style="display: none;">
+                    <div class="result-header">
+                        <div class="result-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <h3>Processing Complete!</h3>
+                    </div>
+                    
+                    <div class="download-options">
+                        <div class="download-card">
+                            <div class="download-info">
+                                <h4>Renamed Only</h4>
+                                <p id="renamedOnlyDetails">Polygons renamed with prefix</p>
+                            </div>
+                            <button id="downloadRenamedBtn" class="btn btn-secondary">
+                                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                                    <path d="M10 12V4M10 12L7 9M10 12L13 9M4 14V15C4 15.5304 4.21071 16.0391 4.58579 16.4142C4.96086 16.7893 5.46957 17 6 17H14C14.5304 17 15.0391 16.7893 15.4142 16.4142C15.7893 16.0391 16 15.5304 16 15V14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Download
+                            </button>
+                        </div>
+                        
+                        <div class="download-card featured">
+                            <div class="download-info">
+                                <h4>With Generated Points</h4>
+                                <p id="fullProcessDetails">Polygons renamed + Points from vertices</p>
+                            </div>
+                            <button id="downloadBtn" class="btn btn-primary">
+                                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                                    <path d="M10 12V4M10 12L7 9M10 12L13 9M4 14V15C4 15.5304 4.21071 16.0391 4.58579 16.4142C4.96086 16.7893 5.46957 17 6 17H14C14.5304 17 15.0391 16.7893 15.4142 16.4142C15.7893 16.0391 16 15.5304 16 15V14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Download
+                            </button>
+                        </div>
+
+                        <div class="download-card csv-card">
+                            <div class="download-info">
+                                <h4>CSV Coordinates</h4>
+                                <p id="csvDetails">Coordinates in CSV format</p>
+                            </div>
+                            <button id="downloadCsvBtn" class="btn btn-csv">
+                                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                                    <path d="M4 4H16M4 8H16M4 12H16M4 16H10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Download CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="error-message" id="errorMessage" style="display: none;">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M10 7V10M10 13H10.01M19 10C19 14.9706 14.9706 19 10 19C5.02944 19 1 14.9706 1 10C1 5.02944 5.02944 1 10 1C14.9706 1 19 5.02944 19 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <span id="errorText"></span>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <div class="info-card">
+                    <h4>What this tool does</h4>
+                    <ul>
+                        <li>Renames all polygons with sequential names (e.g., X1, X2, X3)</li>
+                        <li>Generates point placemarks from polygon vertices</li>
+                        <li>Creates a new folder with "Generated Points" in the KML</li>
+                        <li>Exports CSV with Name, Latitude, Longitude columns (Global Mapper style)</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2026 GIS KML Processor. All processing happens locally in your browser.</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
