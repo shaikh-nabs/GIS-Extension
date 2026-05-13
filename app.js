@@ -4,6 +4,7 @@ const NS = "http://www.opengis.net/kml/2.2";
 // DOM Elements
 const fileInput = document.getElementById('fileInput');
 const prefixInput = document.getElementById('prefixInput');
+const startInput = document.getElementById('startInput');
 const dropZone = document.getElementById('dropZone');
 const fileName = document.getElementById('fileName');
 const processBtn = document.getElementById('processBtn');
@@ -122,6 +123,12 @@ async function processKML() {
     if (!currentFile) return;
 
     const prefix = prefixInput.value || 'X';
+    const startRaw = startInput ? startInput.value.trim() : '';
+    const startNumber = startRaw === '' ? 1 : parseInt(startRaw, 10);
+    if (isNaN(startNumber) || startNumber < 0) {
+        showError('Starting number must be a non-negative integer');
+        return;
+    }
     hideError();
     hideResults();
     processBtn.disabled = true;
@@ -141,7 +148,7 @@ async function processKML() {
         }
 
         showProgress(50, 'Renaming polygons...');
-        const renamedDoc = renamePolygons(xmlDoc, prefix);
+        const renamedDoc = renamePolygons(xmlDoc, prefix, startNumber);
         
         showProgress(60, 'Generating points from vertices...');
         const fullDoc = generatePoints(renamedDoc);
@@ -186,12 +193,12 @@ function readFile(file) {
     });
 }
 
-function renamePolygons(xmlDoc, prefix) {
+function renamePolygons(xmlDoc, prefix, startNumber = 1) {
     // Clone the document to avoid modifying the original
     const newDoc = xmlDoc.cloneNode(true);
-    
+
     const ns = { kml: NS };
-    let counter = 1;
+    let counter = startNumber;
     
     // Find all placemarks
     const placemarks = newDoc.querySelectorAll('Placemark');

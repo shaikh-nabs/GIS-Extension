@@ -29,14 +29,27 @@
                     <div class="input-group">
                         <label for="prefixInput">Naming Prefix</label>
                         <div class="prefix-wrapper">
-                            <input 
-                                type="text" 
-                                id="prefixInput" 
-                                placeholder="XX" 
+                            <input
+                                type="text"
+                                id="prefixInput"
+                                placeholder="XX"
                                 maxlength="2"
                                 value="X"
                             >
                             <span class="prefix-hint">1-2 letter prefix for polygon names (e.g., X, AB)</span>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="startInput">Starting Number <span class="optional-tag">(optional)</span></label>
+                        <div class="prefix-wrapper">
+                            <input
+                                type="number"
+                                id="startInput"
+                                placeholder="1"
+                                min="0"
+                            >
+                            <span class="prefix-hint">Leave empty to start from 1 (e.g., 1000 → X1000, X1001, X1002)</span>
                         </div>
                     </div>
 
