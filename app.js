@@ -89,12 +89,12 @@ function hideProgress() {
     progressSection.style.display = 'none';
 }
 
-function showResults(polygonsRenamed, pointsCreated) {
+function showResults(polygonsRenamed, pointsCreated, csvRowCount) {
     results.style.display = 'block';
     const renamedOnlyText = document.getElementById('renamedOnlyDetails');
     const fullProcessText = document.getElementById('fullProcessDetails');
     const csvDetailsText = document.getElementById('csvDetails');
-    
+
     if (renamedOnlyText) {
         renamedOnlyText.textContent = `${polygonsRenamed} polygons renamed`;
     }
@@ -102,7 +102,8 @@ function showResults(polygonsRenamed, pointsCreated) {
         fullProcessText.textContent = `${polygonsRenamed} polygons renamed, ${pointsCreated} points generated`;
     }
     if (csvDetailsText) {
-        csvDetailsText.textContent = `${pointsCreated} coordinate rows exported`;
+        const rows = csvRowCount !== undefined ? csvRowCount : pointsCreated;
+        csvDetailsText.textContent = `${rows} coordinate rows exported`;
     }
 }
 
@@ -171,11 +172,21 @@ async function processKML() {
         
         // Get stats
         const polygonCount = renamedDoc.querySelectorAll('Placemark Polygon').length;
-        const folder = fullDoc.querySelector('Folder name');
-        const pointCount = folder ? folder.parentElement.querySelectorAll('Placemark Point').length : 0;
-        
+
+        // Find the "Generated Points" folder specifically (not just the first folder)
+        let pointCount = 0;
+        fullDoc.querySelectorAll('Folder').forEach(f => {
+            const nameEl = f.querySelector(':scope > name');
+            if (nameEl && nameEl.textContent.trim() === 'Generated Points') {
+                pointCount = f.querySelectorAll('Placemark Point').length;
+            }
+        });
+
+        // CSV row count from the actual CSV data (minus header)
+        const csvRowCount = csvData ? csvData.split('\n').length - 1 : 0;
+
         hideProgress();
-        showResults(polygonCount, pointCount);
+        showResults(polygonCount, pointCount, csvRowCount);
         
     } catch (err) {
         hideProgress();
@@ -199,15 +210,39 @@ function renamePolygons(xmlDoc, prefix, startNumber = 1) {
 
     const ns = { kml: NS };
     let counter = startNumber;
-    
-    // Find all placemarks
+
+    // Remove pre-existing Point-only placemarks (label anchors etc.)
+    newDoc.querySelectorAll('Placemark').forEach(pm => {
+        const hasPolygon = pm.querySelector('Polygon');
+        const hasLineString = pm.querySelector('LineString');
+        const hasPoint = pm.querySelector('Point');
+        if (hasPoint && !hasPolygon && !hasLineString) {
+            pm.parentNode.removeChild(pm);
+        }
+    });
+
+    // Find all remaining placemarks
     const placemarks = newDoc.querySelectorAll('Placemark');
     
     placemarks.forEach(placemark => {
         // Check if this placemark has a polygon
         const polygon = placemark.querySelector('Polygon');
         if (!polygon) return;
-        
+
+        // Strip any Point geometry co-located with the polygon (label-anchor pattern)
+        const stalePoints = placemark.querySelectorAll('Point');
+        stalePoints.forEach(pt => pt.parentNode.removeChild(pt));
+
+        // If the MultiGeometry wrapper is now empty of geometry, unwrap the Polygon
+        const multiGeom = placemark.querySelector('MultiGeometry');
+        if (multiGeom) {
+            const remainingGeoms = multiGeom.querySelectorAll('Polygon, LineString, Point, Model, MultiGeometry');
+            if (remainingGeoms.length === 1 && remainingGeoms[0] === polygon) {
+                multiGeom.parentNode.insertBefore(polygon, multiGeom);
+                multiGeom.parentNode.removeChild(multiGeom);
+            }
+        }
+
         const newName = `${prefix}${counter}`;
         
         // Update main name element
