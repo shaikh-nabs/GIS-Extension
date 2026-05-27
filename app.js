@@ -244,11 +244,15 @@ function renamePolygons(xmlDoc, prefix, startNumber = 1) {
         }
 
         const newName = `${prefix}${counter}`;
-        
-        // Update main name element
-        const nameElem = placemark.querySelector('name');
+
+        // Update or create the main name element
+        let nameElem = Array.from(placemark.children).find(c => c.tagName === 'name');
         if (nameElem) {
             nameElem.textContent = newName;
+        } else {
+            nameElem = newDoc.createElementNS(NS, 'name');
+            nameElem.textContent = newName;
+            placemark.insertBefore(nameElem, placemark.firstChild);
         }
         
         // Update ExtendedData -> Data name="name"
